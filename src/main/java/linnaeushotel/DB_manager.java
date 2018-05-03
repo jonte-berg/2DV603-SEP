@@ -17,6 +17,10 @@ import com.mongodb.client.MongoCollection;
 
 import linnaeushotel.guest.Guest;
 import linnaeushotel.reservation.Reservation;
+import linnaeushotel.room.Location;
+import linnaeushotel.room.Room;
+import linnaeushotel.room.RoomQuality;
+import linnaeushotel.room.RoomType;
 
 public class DB_manager{
 	
@@ -41,6 +45,7 @@ public class DB_manager{
 			DB db= client.getDB("Hotel");
 			collection=db.getCollection("guest");
 			
+			// fixa så du har defualt id ifrån databasen
 			DBObject guest = new BasicDBObject("_id",g.getId())
 				.append("firstName",g.getFirstName())
 				.append("lastName", g.getLastName())
@@ -151,6 +156,7 @@ public class DB_manager{
 				
 				DBObject obj = cursor.next();
 				Guest g = new Guest();
+				//fixa default id till sträng osv
 				g.setId((int)obj.get("_id"));
 				g.setFirstName((String)obj.get("firstName"));
 				g.setLastName((String)obj.get("lastName"));
@@ -182,9 +188,85 @@ public class DB_manager{
 		
 	}
 
+	public ArrayList<Room >getRooms(){
+		ArrayList<Room> roomList = new ArrayList<Room>();
+	
+		try{
+			
+			uri= new MongoClientURI("mongodb+srv://test:123@cluster0-les1j.mongodb.net/test");
+			client= new MongoClient(uri);
+			
+			@SuppressWarnings("deprecation")
+			DB db= client.getDB("Hotel");
+			collection=db.getCollection("room");
+		
+			DBCursor cursor =  collection.find();
+			
+			while(cursor.hasNext()){
+				
+				 DBObject obj = cursor.next();
+				 RoomQuality a= RoomQuality.valueOf((String)obj.get("RoomQuality"));
+				 RoomType b= RoomType.valueOf((String)obj.get("RoomType"));
+				 Location c=Location.valueOf((String)obj.get("Location"));
+				
+				 Room g = new Room(((int)obj.get("roomNumber")),b,a,c,(boolean)obj.get("smoker"),(boolean)obj.get("reserved"));
+				 roomList.add(g);
+			}
+		
+			
+				client.close();
+				return roomList;
+			
+		    }catch(Exception e){
+				System.err.println(e);
+			}	
+		
+	
+		return null;
+		
+	}
+
+public void updateRoom(Room  g){
+	
+	
+	try{
+		
+		uri= new MongoClientURI("mongodb+srv://test:123@cluster0-les1j.mongodb.net/test");
+		client= new MongoClient(uri);
+		boolean reservationStatus;
+		@SuppressWarnings("deprecation")
+		DB db= client.getDB("Hotel");
+		collection=db.getCollection("room");
+		
+		
+		if(g.isReserved())
+			reservationStatus=false;
+		else
+			reservationStatus=true;
+		
+		
+		DBObject room = new BasicDBObject("roomNumber",g.getRoomNumber())
+			.append("RoomType",g.getType().toString())
+			.append("RoomQuality", g.getQuality().toString())
+			.append("Location", g.getLocation().toString())
+			.append("smoker", g.isSmoker())
+			.append("reserved", reservationStatus);
+			
+			
+		
+		
+		DBObject query = new BasicDBObject("roomNumber",g.getRoomNumber());
+		collection.update(query, room);
+		client.close();
+		
+		}catch(Exception e){
+			System.err.println(e);
+		}	
+	
+}
+
 
 }
-	
 
 
 
