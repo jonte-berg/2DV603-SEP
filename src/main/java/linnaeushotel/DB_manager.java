@@ -183,6 +183,169 @@ public class DB_manager{
 		return null;
 		
 	}
+	
+	public ArrayList<Room >getRooms(){
+		ArrayList<Room> roomList = new ArrayList<Room>();
+	
+		try{
+			
+			uri= new MongoClientURI("mongodb+srv://test:123@cluster0-les1j.mongodb.net/test");
+			client= new MongoClient(uri);
+			
+			@SuppressWarnings("deprecation")
+			DB db= client.getDB("Hotel");
+			collection=db.getCollection("room");
+		
+			DBCursor cursor =  collection.find();
+			
+			while(cursor.hasNext()){
+				
+				 DBObject obj = cursor.next();
+				 RoomQuality a= RoomQuality.valueOf((String)obj.get("RoomQuality"));
+				 RoomType b= RoomType.valueOf((String)obj.get("RoomType"));
+				 Location c=Location.valueOf((String)obj.get("Location"));
+				
+				 Room g = new Room(((int)obj.get("roomNumber")),b,a,c,(boolean)obj.get("smoker"),(boolean)obj.get("reserved"));
+				 roomList.add(g);
+			}
+		
+			
+				client.close();
+				return roomList;
+			
+		    }catch(Exception e){
+				System.err.println(e);
+			}	
+		
+	
+		return null;
+		
+	}
+
+public void updateRoom(Room  g){
+	
+	
+	try{
+		
+		uri= new MongoClientURI("mongodb+srv://test:123@cluster0-les1j.mongodb.net/test");
+		client= new MongoClient(uri);
+		boolean reservationStatus;
+		@SuppressWarnings("deprecation")
+		DB db= client.getDB("Hotel");
+		collection=db.getCollection("room");
+		
+		
+		if(g.isReserved())
+			reservationStatus=false;
+		else
+			reservationStatus=true;
+		
+		
+		DBObject room = new BasicDBObject("roomNumber",g.getRoomNumber())
+			.append("RoomType",g.getType().toString())
+			.append("RoomQuality", g.getQuality().toString())
+			.append("Location", g.getLocation().toString())
+			.append("smoker", g.isSmoker())
+			.append("reserved", reservationStatus);
+			
+			
+		
+		
+		DBObject query = new BasicDBObject("roomNumber",g.getRoomNumber());
+		collection.update(query, room);
+		client.close();
+		
+		}catch(Exception e){
+			System.err.println(e);
+		}	
+	
+}
+
+public void insertReservation(Reservation g){
+
+	
+	try{
+		
+		uri= new MongoClientURI("mongodb+srv://test:123@cluster0-les1j.mongodb.net/test");
+		client= new MongoClient(uri);
+		
+		@SuppressWarnings("deprecation")
+		DB db= client.getDB("Hotel");
+		collection=db.getCollection("reservations");
+		DBObject room = new BasicDBObject("roomNumber",g.getRoom().getRoomNumber())
+				.append("RoomType",g.getRoom().getType().toString())
+				.append("RoomQuality",g.getRoom().getQuality().toString())
+				.append("Location", g.getRoom().getLocation().toString())
+				.append("smoker", g.getRoom().isSmoker())
+				.append("reserved", g.getRoom().isReserved());
+	
+		
+		DBObject reservation = new BasicDBObject("startDate",g.getStartDate())
+			.append("endDate",g.getEndDate())
+			
+			.append("room", room)
+			.append("price", g.getPrice());
+			
+		collection.insert(reservation);
+
+
+		client.close();
+		}catch(Exception e){
+			System.err.println(e);
+		}	
+		
+
+
+	}
+
+public ArrayList<Reservation>getReservations(){
+	ArrayList<Reservation> reservationList = new ArrayList<Reservation>();
+
+	try{
+		
+		uri= new MongoClientURI("mongodb+srv://test:123@cluster0-les1j.mongodb.net/test");
+		client= new MongoClient(uri);
+		
+		@SuppressWarnings("deprecation")
+		DB db= client.getDB("Hotel");
+		collection=db.getCollection("reservations");
+	
+		DBCursor cursor =  collection.find();
+		
+		while(cursor.hasNext()){
+			
+			 DBObject obj = cursor.next();
+			 Date sd=(Date) obj.get("startDate");
+			 Date ed=(Date) obj.get("endDate");
+			
+			
+			 RoomType b = RoomType.valueOf((String)((DBObject) obj.get("room")).get("RoomType"));
+			 RoomQuality a= RoomQuality.valueOf((String)((DBObject) obj.get("room")).get("RoomQuality"));
+			 Location c=Location.valueOf((String)((DBObject) obj.get("room")).get("Location"));
+			 Room g = new Room(((int)((DBObject)obj.get("room")).get("roomNumber")),b,a,c,
+					 (boolean)((DBObject)obj.get("room")).get("smoker"),
+					 (boolean)((DBObject)obj.get("room")).get("reserved"));
+			
+			 Reservation r = new Reservation((LocalDate)sd.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+				 		(LocalDate)ed.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+					 		 g,(double)obj.get("price"));
+			
+			
+			reservationList.add(r);
+		}
+	
+		
+			client.close();
+			return reservationList;
+		
+	    }catch(Exception e){
+			System.err.println(e);
+		}	
+	
+
+	return null;
+	
+}
 
 
 }
